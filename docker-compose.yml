@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: python-template-mongodb
+    restart: unless-stopped
+    ports:
+      - "${MONGO_PORT}:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGODB_DATABASE}
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - python-template-network
+
+  postgresql:
+    image: postgres:16
+    container_name: python-template-postgresql
+    restart: unless-stopped
+    ports:
+      - "${POSTGRE_PORT}:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRE_DATABASE}
+      - POSTGRES_USER=${POSTGRE_USER}
+      - POSTGRES_PASSWORD=${POSTGRE_PASSWORD}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+    networks:
+      - python-template-network
+
+
+volumes:
+  mongodb_data:
+  mongodb_config:
+  postgresql_data:
+
+networks:
+  python-template-network:
+    driver: bridge
