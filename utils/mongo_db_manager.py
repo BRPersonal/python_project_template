@@ -2,6 +2,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Optional
 from .logger import logger
 from .config import settings
+from mongo_collection_names import CollectionNames
 
 class MongoDBManager:
     def __init__(self):
@@ -25,7 +26,7 @@ class MongoDBManager:
     async def _create_indexes(self):
         try:
             #replace the following statement with your project specific indexes
-            await self.database["your_collection"].create_index("your_field", unique=True)
+            await self.database[CollectionNames.USER_PROFILE].create_index("email", unique=True)
             logger.info("MongoDB indexes created successfully")
         except Exception as e:
             logger.warning(f"Error creating MongoDB indexes: {str(e)}")

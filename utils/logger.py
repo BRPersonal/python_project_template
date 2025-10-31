@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 # Create logger
-logger = logging.getLogger("Ai-QuizBot")
+logger = logging.getLogger("Template-Project")
 logger.setLevel(logging.DEBUG)  # minimum log level
 
 

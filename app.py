@@ -72,7 +72,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 #handle business logic violation exception 
 @app.exception_handler(BusinessException)
-async def quizbot_exception_handler(request: Request, exc: BusinessException):
+async def business_exception_handler(request: Request, exc: BusinessException):
     logger.error(f"Business violation exception in {request.method} {request.url.path}", exc_info=True)
     error_response = ErrorResponse(
         error=str(exc),

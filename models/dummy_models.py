@@ -2,7 +2,7 @@
 from pydantic import BaseModel, Field,field_validator, model_validator
 
 class User(BaseModel):
-  id: int = Field(...,description="unique user id")
+  id: str = Field(...,description="unique user id")
   name: str = Field(...,description="full name")
   email: str = Field(...,description="email")
 

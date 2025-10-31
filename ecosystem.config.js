@@ -1,7 +1,7 @@
 //This file is for deploying app to production using tool pm2
 module.exports = {
   apps: [{
-    name: "aiQuizBot-be",
+    name: "python-template-project",
     script: "app.py",
     cwd: __dirname,  //current working directory same as this file
     interpreter: "./.venv/bin/python",

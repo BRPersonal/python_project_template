@@ -4,7 +4,7 @@ class StatusCode(BaseModel):
   SUCCESS : int = Field(200)
   ENTITY_CREATION_SUCCESSFUL: int = Field(201)
   REQUEST_ACCEPTED: int = Field(202)  #for background processing
-  ENTITY_DELETION_SUCCESSFUL: int = Field(204)
+  ENTITY_DELETION_SUCCESSFUL: int = Field(200)
   NO_CONTENT: int = Field(204)
   ENTITY_NOT_FOUND : int = Field(404)
   VALIDATION_ERROR: int = Field(400)

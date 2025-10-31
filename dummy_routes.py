@@ -10,8 +10,8 @@ async def create_user(request: UserRequest):
   result = await user_service.create_user(request)
   return to_json_response(result)
 
-@dummy_router.delete("/{user_id}")
-async def delete_user(user_id: int):
-  result = await user_service.delete_user(user_id)
+@dummy_router.delete("/{email}")
+async def delete_user(email: str):
+  result = await user_service.delete_user(email)
   return to_json_response(result)
 
