@@ -40,8 +40,8 @@ async def lifespan_handler(app: FastAPI):
 
 
 app = FastAPI(
-        title="AI QuizBot",
-        description="Python application that gives a quiz",
+        title="Template Project",
+        description="Python template project that shows some best practices",
         version="1.0.0",
         lifespan=lifespan_handler
 
