@@ -1,6 +1,7 @@
 from databases import Database
 from .config import settings
 from .logger import logger
+from typing import Dict,Optional,Any
 
 class PostgreDbManager:
     def __init__(self):
@@ -31,6 +32,12 @@ class PostgreDbManager:
         except Exception as e:
             logger.error(f"PostgreSQL health check failed: {str(e)}")
             return False
+
+    async def execute(self,query:str, values: Optional[Dict[str,Any]]):
+        await self.database.execute(query=query, values=values)
+
+    async def fetch_one(self,query:str, values: Optional[Dict[str,Any]]):
+        await self.database.fetch_one(query=query, values=values)
 
 #global instance
 postgre_manager = PostgreDbManager()
