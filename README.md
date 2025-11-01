@@ -88,6 +88,30 @@ Debugging
 ----------
 get into container's mongo shell
 $ docker exec -it python-template-mongodb mongosh -u admin -p password123 --authenticationDatabase admin template_db
+template_db> show collections;
+user_profiles
+
+template_db> db.user_profiles.countDocuments()
+template_db> db.user_profiles.findOne()
+
+exclude _id field in the output $project means projection
+template_db> db.user_profiles.aggregate([
+  { $sample: { size: 1 } },
+  { $project: { _id: 0 } }
+])
+
+template_db> db.user_profiles.find().limit(3).pretty()
+
+template_db> db.user_profiles.find({email: "demo11@email.com"})
+
+delete all documents
+template_db> db.user_profiles.deleteMany({})
+
+delete the collection and its indexes
+template_db> db.user_profiles.drop()
+
+exit mongo shell
+template_db> exit
 
 get into container's postgre shell
 $ docker exec -it python-template-postgresql psql -U postgres -d security_db
