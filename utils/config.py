@@ -26,7 +26,7 @@ class Settings(BaseSettings):
 
   @property
   def postgre_db_url(self) -> str:
-    """Constructs and returns the MongoDB connection URL"""
+    """Constructs and returns the postgre connection URL"""
     return f"postgresql+asyncpg://{self.POSTGRE_USER}:{self.POSTGRE_PASSWORD}@{self.POSTGRE_HOST}:{self.POSTGRE_PORT}/{self.POSTGRE_DATABASE}"
 
 # Global singleton instance
