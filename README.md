@@ -113,14 +113,15 @@ template_db> db.user_profiles.drop()
 exit mongo shell
 template_db> exit
 
-get into container's postgre shell
-$ docker exec -it python-template-postgresql psql -U postgres -d security_db
 
 Adding Jwt based security to FastApi apps
 ------------
 # encode jwt secret key
 echo "my_secert_key_123" | base64
 bXlfc2VjZXJ0X2tleV8xMjMK
+
+get into container's postgre shell
+$ docker exec -it python-template-postgresql psql -U postgres -d security_db
 
 --Postgre script
 CREATE TABLE app_user(

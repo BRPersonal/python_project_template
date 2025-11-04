@@ -10,6 +10,7 @@ from utils.config import settings
 from contextlib import asynccontextmanager
 from utils.logger import logger
 from dummy_routes import dummy_router
+from auth.auth_routes import auth_router
 from business_exception import BusinessException
 from utils.data_sources_manager import data_sources_manager
 from datetime import datetime, timezone
@@ -97,6 +98,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
     )
 
 app.include_router(dummy_router)
+app.include_router(auth_router)
 
 # Favicon endpoint to prevent 404 logs
 @app.get("/favicon.ico")

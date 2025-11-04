@@ -7,7 +7,7 @@ from .auth_models import (
 )
 from models.api_responses import SuccessResponse
 from models.status_code import sc
-from .auth_repository import create_user, get_app_user, verify_password, is_user_exists
+from .auth_repository import create_user, get_users_count,get_app_user, verify_password, is_user_exists
 from .jwt_util import JwtUtil
 
 
@@ -37,6 +37,11 @@ class AuthenticationService:
             roles="user",  # Default role
             permissions=""  # Default empty permissions
         )
+
+        #If this is the first signup make the user as admin
+        user_count = await get_users_count()
+        if user_count == 0:
+            app_user.roles = "admin"
 
         # Save user to database
         await create_user(app_user)
