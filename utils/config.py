@@ -6,6 +6,7 @@ from pathlib import Path
 
 class Settings(BaseSettings):
   APP_PORT: int
+  DEV_MODE: bool
   MONGO_HOST: str = "localhost"
   MONGO_PORT: int
   MONGO_USER: str
@@ -16,6 +17,10 @@ class Settings(BaseSettings):
   POSTGRE_USER: str
   POSTGRE_PASSWORD: str
   POSTGRE_DATABASE: str
+  JWT_SECRET_KEY: str
+  JWT_EXPIRATION: int = 86400000  # Default 24 hours in milliseconds
+  ALLOWED_ROLES: str
+  ALLOWED_PERMISSIONS: str
 
   model_config = {"env_file": ".env"}
   

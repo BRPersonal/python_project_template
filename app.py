@@ -139,5 +139,5 @@ async def database_health_check():
         }
 
 if __name__ == "__main__":
-    logger.debug(f"Starting Server in port:{settings.APP_PORT}")
-    uvicorn.run("app:app", host="0.0.0.0", port=settings.APP_PORT, reload=True)
+    logger.debug(f"Starting Server in port:{settings.APP_PORT}, reload={settings.DEV_MODE}")
+    uvicorn.run("app:app", host="0.0.0.0", port=settings.APP_PORT, reload=settings.DEV_MODE)
