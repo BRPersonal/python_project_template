@@ -51,9 +51,9 @@ async def assign_roles(
 @auth_router.post("/assign-permissions")
 async def assign_permissions(
     assign_permissions_request: AssignPermissionsRequest,
-    current_user: AuthenticatedUser = Depends(auth_middleware.require_admin)
+    current_user: AuthenticatedUser = Depends(auth_middleware.require_admin())
 ):
     """Assign permissions to a user (admin only)"""
     result = await auth_service.assign_permissions(assign_permissions_request.email, assign_permissions_request.permissions,current_user.firstName)
-    logger.info(f"Permissions assigned by admin {current_user.firstName} to user: {assign_roles_request.email}")
+    logger.info(f"Permissions assigned by admin {current_user.firstName} to user: {assign_permissions_request.email}")
     return to_json_response(result)

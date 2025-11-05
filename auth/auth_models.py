@@ -46,6 +46,6 @@ class AppUser(BaseModel):
     lastName: str
     email: EmailStr
     password: str
-    roles: Optional[List[str]] = []
-    permissions: Optional[List[str]] = []
+    roles: Optional[str] = None
+    permissions: Optional[str] = None
     social_login_ids: Optional[str] = None

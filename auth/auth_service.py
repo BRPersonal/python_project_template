@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from fastapi import HTTPException, status
+from business_exception import BusinessException
 from utils.logger import logger
 from .auth_models import (
     SignInRequest, SignUpRequest, AuthenticatedUser, AppUser,
@@ -16,35 +16,24 @@ class AuthenticationService:
     
     def __init__(self):
         self.jwt_util = JwtUtil()
-        logger.info("Initialized AuthenticationService with PostgreSQL database")
     
     async def sign_up(self, signup_request: SignUpRequest) -> SuccessResponse[Dict[str, Any]]:
-        """Register a new user in PostgreSQL database"""
         # Check if user already exists
         if await is_user_exists(signup_request.email):
             logger.warning(f"User registration failed - user already exists: {signup_request.email}")
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"User with email '{signup_request.email}' already exists"
+            raise BusinessException(
+                message=f"User with email '{signup_request.email}' already exists",
+                error_code=sc.DUPLICATE_ENTITY
             )
 
-        # Create AppUser object for database
-        app_user = AppUser(
-            firstName=signup_request.firstName,
-            lastName=signup_request.lastName,
-            email=signup_request.email,
-            password=signup_request.password,
-            roles=["user"],  # Default role
-            permissions=[]  # Default empty permissions
-        )
-
+        role = "user"
         #If this is the first signup make the user as admin
         user_count = await get_users_count()
         if user_count == 0:
-            app_user.roles = ["admin"]
+            role = "admin"
 
         # Save user to database
-        await create_user(app_user)
+        await create_user(signup_request,role)
 
         logger.info(f"User registration successful for email: {signup_request.email}")
         return SuccessResponse(
@@ -53,24 +42,30 @@ class AuthenticationService:
         )
 
     async def sign_in(self, signin_request: SignInRequest) -> SuccessResponse[AuthenticatedUser]:
-        """Authenticate user via PostgreSQL database"""
         # First, get user details from database
         app_user = await get_app_user(signin_request.email)
 
         # Verify user password using the retrieved password hash
         if not  verify_password(signin_request.password, app_user.password):
             logger.warning(f"User authentication failed - invalid credentials: {signin_request.email}")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid credentials"
+            raise BusinessException(
+                message="Invalid credentials",
+                error_code=sc.UNAUTHORIZED
             )
+
+        # Split comma-separated roles and permissions into arrays
+        roles = app_user.roles.split(',') if app_user.roles else []
+        roles = [role.strip() for role in roles if role.strip()]
+        
+        permissions = app_user.permissions.split(',') if app_user.permissions else []
+        permissions = [permission.strip() for permission in permissions if permission.strip()]
 
         # Generate JWT token
         token = self.jwt_util.generate_token(
             username=signin_request.email,
             first_name=app_user.firstName,
-            roles=app_user.roles,
-            permissions=app_user.permissions
+            roles=roles,
+            permissions=permissions
         )
 
         return SuccessResponse(
@@ -78,8 +73,8 @@ class AuthenticationService:
                     firstName=app_user.firstName,
                     email=signin_request.email,
                     token=token,
-                    roles=app_user.roles,
-                    permissions=app_user.permissions
+                    roles=roles,
+                    permissions=permissions
                 ),
             message="Login successful",
             status_code=sc.SUCCESS)
@@ -91,13 +86,12 @@ class AuthenticationService:
           status_code=sc.SUCCESS)
     
     async def get_user_permissions(self, token: str) -> SuccessResponse[AccessPermissions]:
-        """Get user permissions by validating JWT token"""
         # Validate JWT token
         if not self.jwt_util.is_token_valid(token):
             logger.warning("Invalid JWT token provided for permissions request")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired token"
+            raise BusinessException(
+                message="Invalid or expired token",
+                error_code=sc.UNAUTHORIZED,
             )
 
         # Extract user information from JWT token
@@ -117,16 +111,7 @@ class AuthenticationService:
             status_code=sc.SUCCESS)
 
     async def assign_roles(self, email: str, roles: list[str],admin_user:str) -> SuccessResponse[Dict[str, Any]]:
-        """Assign roles to a user by email"""
-        # Validate roles list is not empty
-        if not roles:
-            logger.warning(f"Empty roles list provided for user: {email}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Roles list cannot be empty"
-            )
 
-        # Assign roles via repository (raises BusinessException if user not found)
         await assign_roles(email, roles,admin_user)
 
         logger.info(f"Roles assigned successfully for user: {email}, roles: {roles}")
@@ -136,16 +121,6 @@ class AuthenticationService:
         )
 
     async def assign_permissions(self, email: str, permissions: list[str],admin_user:str) -> SuccessResponse[Dict[str, Any]]:
-        """Assign permissions to a user by email"""
-        # Validate permissions list is not empty
-        if not permissions:
-            logger.warning(f"Empty permissions list provided for user: {email}")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Permissions list cannot be empty"
-            )
-
-        # Assign permissions via repository (raises BusinessException if user not found)
         await assign_permissions(email, permissions,admin_user)
 
         logger.info(f"Permissions assigned successfully for user: {email}, permissions: {permissions}")

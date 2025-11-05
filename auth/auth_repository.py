@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from sqlalchemy import create_engine, text
-from .auth_models import AppUser
+from .auth_models import SignUpRequest,AppUser
 from business_exception import BusinessException
 from models.status_code import sc
 from utils.config import settings
@@ -9,7 +9,6 @@ from utils.logger import logger
 from utils.postgre_db_manager import postgre_manager
 
 def _hash_password(password: str) -> str:
-    """Hash a password using bcrypt"""
     try:
         # Generate salt and hash password
         salt = bcrypt.gensalt()
@@ -23,29 +22,23 @@ def _hash_password(password: str) -> str:
         )
 
 
-async def create_user(user: AppUser) -> None:
-    """Create a new user in the app_user table"""
+async def create_user(signup_request: SignUpRequest,role:str) -> None:
     try:
         # Prepare SQL query to INSERT a new user
         insert_query = """
-            INSERT INTO app_user (first_name, last_name, email_id, password, roles, permissions, created_by, created_on, last_updated_by, last_updated_on)
-            VALUES (:firstName, :lastName, :email, :password, :roles, :permissions, :createdBy, NOW(), :lastUpdatedBy, NOW());
+            INSERT INTO app_user (first_name, last_name, email_id, password, roles, created_by, created_on, last_updated_by, last_updated_on)
+            VALUES (:firstName, :lastName, :email, :password, :roles, :createdBy, NOW(), :lastUpdatedBy, NOW());
         """
 
         # Hash the password before storing
-        hashed_password = _hash_password(user.password)
-
-        # Convert roles and permissions lists to comma-separated strings
-        roles_str = ','.join(user.roles) if user.roles else ''
-        permissions_str = ','.join(user.permissions) if user.permissions else ''
+        hashed_password = _hash_password(signup_request.password)
 
         values = {
-            'firstName': user.firstName,
-            'lastName': user.lastName,
-            'email': user.email,
+            'firstName': signup_request.firstName,
+            'lastName': signup_request.lastName,
+            'email': signup_request.email,
             'password': hashed_password,
-            'roles': roles_str,
-            'permissions': permissions_str,
+            'roles': role,
             'createdBy': 'system',
             'lastUpdatedBy': 'system'
         }
@@ -57,24 +50,21 @@ async def create_user(user: AppUser) -> None:
             message=f"Failed to create user: {str(error)}",
             error_code = sc.VALIDATION_ERROR,
             original_exception=error,
-            details={"user_email": user.email}
+            details={"user_email": signup_request.email}
         )
 
 async def is_user_exists(email: str) -> bool:
-    """Check if a user exists by email"""
     query = "SELECT COUNT('x') FROM app_user WHERE email_id = :email"
     params = {"email": email}
     result =  await postgre_manager.fetch_one(query=query, values=params)
     return True if result and result[0] != 0 else False
 
 async def get_users_count() -> int:
-    """Get the total count of users in the app_user table"""
     query = "SELECT COUNT('x') FROM app_user"
     result = await postgre_manager.fetch_one(query=query)
     return result[0] if result else 0
 
 async def get_app_user(email: str) -> AppUser:
-    """Get user by email address"""
     query = """
         SELECT first_name, last_name, email_id, password, roles, permissions, social_login_ids
         FROM app_user 
@@ -85,30 +75,22 @@ async def get_app_user(email: str) -> AppUser:
 
     if not record:
         raise BusinessException(
-            message=f"User with email '{email}' not found",
-            error_code=sc.ENTITY_NOT_FOUND
+            message="Invalid credentials",
+            error_code=sc.UNAUTHORIZED
         )
-
-    # Convert comma-separated strings to lists
-    roles = record['roles'].split(',') if record['roles'] else []
-    roles = [role.strip() for role in roles if role.strip()]
-
-    permissions = record['permissions'].split(',') if record['permissions'] else []
-    permissions = [permission.strip() for permission in permissions if permission.strip()]
 
     return AppUser(
         firstName=record['first_name'],
         lastName=record['last_name'],
         email=record['email_id'],
         password=record['password'],  # Return actual password hash
-        roles=roles,
-        permissions=permissions,
+        roles=record['roles'],
+        permissions=record['permissions'],
         social_login_ids=record['social_login_ids'] if record['social_login_ids'] else None
     )
 
 
 async def assign_roles(email: str, roles: list[str],admin_user:str) -> None:
-    """Assign roles to a user by email"""
     # Check if user exists
     user_exists = await is_user_exists(email)
     if not user_exists:
@@ -134,7 +116,6 @@ async def assign_roles(email: str, roles: list[str],admin_user:str) -> None:
 
 
 async def assign_permissions(email: str, permissions: list[str],admin_user:str) -> None:
-    """Assign permissions to a user by email"""
     # Check if user exists
     user_exists = await is_user_exists(email)
     if not user_exists:
@@ -159,7 +140,6 @@ async def assign_permissions(email: str, permissions: list[str],admin_user:str) 
     await postgre_manager.execute(query=update_query,values=values)
 
 def get_all_roles() -> list[str]:
-    """Get all allowed roles from configuration"""
     roles_str = settings.ALLOWED_ROLES
     if not roles_str or roles_str.strip() == '':
         return []
@@ -169,7 +149,6 @@ def get_all_roles() -> list[str]:
     return roles
 
 def get_all_permissions() -> list[str]:
-    """Get all allowed permissions from configuration"""
     permissions_str = settings.ALLOWED_PERMISSIONS
     if not permissions_str or permissions_str.strip() == '':
         return []
@@ -179,7 +158,6 @@ def get_all_permissions() -> list[str]:
     return permissions
 
 async def update_password(email: str, new_password: str) -> None:
-    """Update user password by email"""
     # Check if user exists
     user_exists = await is_user_exists(email)
     if not user_exists:
@@ -206,7 +184,5 @@ async def update_password(email: str, new_password: str) -> None:
     await postgre_manager.execute(query=update_query, values=values)
 
 
-
 def verify_password(user_password: str, password_in_db: str) -> bool:
-    """Verify a password against its hash"""
     return bcrypt.checkpw(user_password.encode('utf-8'), password_in_db.encode('utf-8'))
