@@ -10,6 +10,7 @@ Browse the url
 http://localhost:8002/health
 http://localhost:8002/health/database
 
+Delete volumes also
 $docker-compose down -v
 
 Securing the app with https

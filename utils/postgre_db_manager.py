@@ -34,7 +34,7 @@ class PostgreDbManager:
             return False
 
     async def execute(self,query:str, values: Optional[Dict[str,Any]] = None):
-        return await self.database.execute(query=query, values=values)
+        await self.database.execute(query=query, values=values)
 
     async def fetch_one(self,query:str, values: Optional[Dict[str,Any]] = None):
         return await self.database.fetch_one(query=query, values=values)
