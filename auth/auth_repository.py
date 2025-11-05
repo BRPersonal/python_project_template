@@ -1,10 +1,11 @@
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from sqlalchemy import create_engine, text
 from .auth_models import AppUser
 from business_exception import BusinessException
 from models.status_code import sc
 from utils.config import settings
 import bcrypt
+from utils.logger import logger
 from utils.postgre_db_manager import postgre_manager
 
 def _hash_password(password: str) -> str:
@@ -27,26 +28,26 @@ async def create_user(user: AppUser) -> None:
     try:
         # Prepare SQL query to INSERT a new user
         insert_query = """
-            INSERT INTO app_user (first_name, last_name, email_id, password, created_by, created_on, last_updated_by, last_updated_on)
-            VALUES (:firstName, :lastName, :email, :password, :createdBy, :createdOn, :lastUpdatedBy, :lastUpdatedOn);
+            INSERT INTO app_user (first_name, last_name, email_id, password, roles, permissions, created_by, created_on, last_updated_by, last_updated_on)
+            VALUES (:firstName, :lastName, :email, :password, :roles, :permissions, :createdBy, NOW(), :lastUpdatedBy, NOW());
         """
 
         # Hash the password before storing
         hashed_password = _hash_password(user.password)
-        current_time = datetime.now(UTC)
+
+        # Convert roles and permissions lists to comma-separated strings
+        roles_str = ','.join(user.roles) if user.roles else ''
+        permissions_str = ','.join(user.permissions) if user.permissions else ''
 
         values = {
             'firstName': user.firstName,
             'lastName': user.lastName,
             'email': user.email,
             'password': hashed_password,
-            'roles': user.roles or '',
-            'permissions': user.permissions or '',
-            'socialLoginIds': user.social_login_ids or '',
+            'roles': roles_str,
+            'permissions': permissions_str,
             'createdBy': 'system',
-            'createdOn': current_time,
-            'lastUpdatedBy': 'system',
-            'lastUpdatedOn': current_time
+            'lastUpdatedBy': 'system'
         }
 
         await postgre_manager.execute(query=insert_query, values=values)
@@ -89,13 +90,20 @@ async def get_app_user(email: str) -> AppUser:
                 error_code=sc.ENTITY_NOT_FOUND
             )
         
+        # Convert comma-separated strings to lists
+        roles = record['roles'].split(',') if record['roles'] else []
+        roles = [role.strip() for role in roles if role.strip()]
+        
+        permissions = record['permissions'].split(',') if record['permissions'] else []
+        permissions = [permission.strip() for permission in permissions if permission.strip()]
+        
         return AppUser(
             firstName=record['first_name'],
             lastName=record['last_name'],
             email=record['email_id'],
             password=record['password'],  # Return actual password hash
-            roles=record['roles'] if record['roles'] else [],
-            permissions=record['permissions'] if record['permissions'] else [],
+            roles=roles,
+            permissions=permissions,
             social_login_ids=record['social_login_ids'] if record['social_login_ids'] else None
         )
     except Exception as error:
@@ -106,7 +114,7 @@ async def get_app_user(email: str) -> AppUser:
             details={"email": email}
         )
 
-async def assign_roles(email: str, roles: list[str]) -> None:
+async def assign_roles(email: str, roles: list[str],admin_user:str) -> None:
     """Assign roles to a user by email"""
     # Check if user exists
     user_exists = await is_user_exists(email)
@@ -120,21 +128,19 @@ async def assign_roles(email: str, roles: list[str]) -> None:
     roles_str = ','.join(roles) if roles else ''
     update_query = """
         UPDATE app_user 
-        SET roles = :roles, last_updated_by = :updatedBy, last_updated_on = :updatedOn
+        SET roles = :roles, last_updated_by = :updatedBy, last_updated_on = NOW()
         WHERE email_id = :email
     """
 
-    current_time = datetime.now(UTC)
     values = {
         'roles': roles_str,
-        'updatedBy': 'system',
-        'updatedOn': current_time,
+        'updatedBy': admin_user,
         'email': email
     }
     await postgre_manager.execute(query=update_query,values=values)
 
 
-async def assign_permissions(email: str, permissions: list[str]) -> None:
+async def assign_permissions(email: str, permissions: list[str],admin_user:str) -> None:
     """Assign permissions to a user by email"""
     # Check if user exists
     user_exists = await is_user_exists(email)
@@ -148,15 +154,13 @@ async def assign_permissions(email: str, permissions: list[str]) -> None:
     permissions_str = ','.join(permissions) if permissions else ''
     update_query = """
         UPDATE app_user 
-        SET permissions = :permissions, last_updated_by = :updatedBy, last_updated_on = :updatedOn
+        SET permissions = :permissions, last_updated_by = :updatedBy, last_updated_on = NOW()
         WHERE email_id = :email
     """
 
-    current_time = datetime.now(UTC)
     values = {
         'permissions': permissions_str,
-        'updatedBy': 'system',
-        'updatedOn': current_time,
+        'updatedBy': admin_user,
         'email': email
     }
     await postgre_manager.execute(query=update_query,values=values)
@@ -198,15 +202,13 @@ async def update_password(email: str, new_password: str) -> None:
         # Update password
         update_query = """
             UPDATE app_user 
-            SET password = :password, last_updated_by = :updatedBy, last_updated_on = :updatedOn
+            SET password = :password, last_updated_by = :updatedBy, last_updated_on = NOW()
             WHERE email_id = :email
         """
 
-        current_time = datetime.now(UTC)
         values = {
             'password': hashed_password,
             'updatedBy': 'system',
-            'updatedOn': current_time,
             'email': email
         }
         await postgre_manager.execute(query=update_query, values=values)

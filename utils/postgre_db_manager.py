@@ -34,13 +34,13 @@ class PostgreDbManager:
             return False
 
     async def execute(self,query:str, values: Optional[Dict[str,Any]] = None):
-        await self.database.execute(query=query, values=values)
+        return await self.database.execute(query=query, values=values)
 
     async def fetch_one(self,query:str, values: Optional[Dict[str,Any]] = None):
-        await self.database.fetch_one(query=query, values=values)
+        return await self.database.fetch_one(query=query, values=values)
 
     async def fetch_all(self,query:str,values: Optional[Dict[str,Any]] = None):
-        await self.database.fetch_all(query=query, values=values)
+        return await self.database.fetch_all(query=query, values=values)
 
 #global instance
 postgre_manager = PostgreDbManager()

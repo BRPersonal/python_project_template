@@ -39,6 +39,17 @@ class AuthenticatedUser(BaseModel):
     permissions: Optional[List[str]] = []
     token: str = None
 
+class AssignRolesRequest(BaseModel):
+    """Model for assigning roles request"""
+    email: EmailStr
+    roles: List[str]
+
+class AssignPermissionsRequest(BaseModel):
+    """Model for assigning permissions request"""
+    email: EmailStr
+    permissions: List[str]
+
+
 class AppUser(BaseModel):
     """Model for app user"""
     firstName: str

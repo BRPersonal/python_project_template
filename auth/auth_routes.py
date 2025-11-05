@@ -1,6 +1,6 @@
 from fastapi import APIRouter,  Depends
 from utils.commons import to_json_response
-from .auth_models import SignInRequest, SignUpRequest,AuthenticatedUser
+from .auth_models import SignInRequest, SignUpRequest, AuthenticatedUser, AssignRolesRequest,AssignPermissionsRequest
 from .auth_service import auth_service
 from auth.auth_middleware import auth_middleware
 from utils.logger import logger
@@ -38,3 +38,22 @@ async def get_permissions(current_user: AuthenticatedUser = Depends(auth_middlew
     logger.debug(f"Permissions retrieved for: {current_user.email}")
     return to_json_response(result)
 
+@auth_router.post("/assign-roles")
+async def assign_roles(
+    assign_roles_request: AssignRolesRequest,
+    current_user: AuthenticatedUser = Depends(auth_middleware.require_roles(["admin"]))
+):
+    """Assign roles to a user (admin only)"""
+    result = await auth_service.assign_roles(assign_roles_request.email, assign_roles_request.roles,current_user.firstName)
+    logger.info(f"Roles assigned by admin {current_user.firstName} to user: {assign_roles_request.email}")
+    return to_json_response(result)
+
+@auth_router.post("/assign-permissions")
+async def assign_permissions(
+    assign_permissions_request: AssignPermissionsRequest,
+    current_user: AuthenticatedUser = Depends(auth_middleware.require_admin)
+):
+    """Assign permissions to a user (admin only)"""
+    result = await auth_service.assign_permissions(assign_permissions_request.email, assign_permissions_request.permissions,current_user.firstName)
+    logger.info(f"Permissions assigned by admin {current_user.firstName} to user: {assign_roles_request.email}")
+    return to_json_response(result)

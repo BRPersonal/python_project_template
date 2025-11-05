@@ -152,10 +152,10 @@ COMMENT ON COLUMN app_user.permissions IS 'User permissions (e.g, create,read,up
 security_db=# \d app_user
 security_db=# select count('x') from app_user;
 1
-security_db=# select user_id,email_id,password from app_user;
- user_id |     email_id     |                           password                           
----------+------------------+--------------------------------------------------------------
-       2 | demo11@email.com | $2b$12$mB/eP4LWvlgAOsf5yGo2N.JvkobJDrfgq5XqLnCKlnyt3lsEzwfHe
+security_db=# select user_id,email_id,password,roles from app_user;
+ user_id |     email_id     |                           password                           | roles 
+---------+------------------+-----------------------------------------------------------------------
+       2 | demo11@email.com | $2b$12$mB/eP4LWvlgAOsf5yGo2N.JvkobJDrfgq5XqLnCKlnyt3lsEzwfHe | admin
 
 security_db=# delete from app_user where email_id = 'test+5.user@example.com';
 security_db=# \q

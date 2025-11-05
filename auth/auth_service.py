@@ -7,7 +7,7 @@ from .auth_models import (
 )
 from models.api_responses import SuccessResponse
 from models.status_code import sc
-from .auth_repository import create_user, get_users_count,get_app_user, verify_password, is_user_exists
+from .auth_repository import create_user, get_users_count,get_app_user, verify_password, is_user_exists, assign_roles, assign_permissions
 from .jwt_util import JwtUtil
 
 
@@ -34,14 +34,14 @@ class AuthenticationService:
             lastName=signup_request.lastName,
             email=signup_request.email,
             password=signup_request.password,
-            roles="user",  # Default role
-            permissions=""  # Default empty permissions
+            roles=["user"],  # Default role
+            permissions=[]  # Default empty permissions
         )
 
         #If this is the first signup make the user as admin
         user_count = await get_users_count()
         if user_count == 0:
-            app_user.roles = "admin"
+            app_user.roles = ["admin"]
 
         # Save user to database
         await create_user(app_user)
@@ -122,6 +122,44 @@ class AuthenticationService:
                     permissions=permissions
                 ),
             status_code=sc.SUCCESS)
+
+    async def assign_roles(self, email: str, roles: list[str],admin_user:str) -> SuccessResponse[Dict[str, Any]]:
+        """Assign roles to a user by email"""
+        # Validate roles list is not empty
+        if not roles:
+            logger.warning(f"Empty roles list provided for user: {email}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Roles list cannot be empty"
+            )
+
+        # Assign roles via repository (raises BusinessException if user not found)
+        await assign_roles(email, roles,admin_user)
+
+        logger.info(f"Roles assigned successfully for user: {email}, roles: {roles}")
+        return SuccessResponse(
+            data={"message": "Roles assigned successfully", "status": "success", "email": email, "roles": roles},
+            status_code=sc.SUCCESS
+        )
+
+    async def assign_permissions(self, email: str, permissions: list[str],admin_user:str) -> SuccessResponse[Dict[str, Any]]:
+        """Assign permissions to a user by email"""
+        # Validate permissions list is not empty
+        if not permissions:
+            logger.warning(f"Empty permissions list provided for user: {email}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Permissions list cannot be empty"
+            )
+
+        # Assign permissions via repository (raises BusinessException if user not found)
+        await assign_permissions(email, permissions,admin_user)
+
+        logger.info(f"Permissions assigned successfully for user: {email}, permissions: {permissions}")
+        return SuccessResponse(
+            data={"message": "Permissions assigned successfully", "status": "success", "email": email, "permissions": permissions},
+            status_code=sc.SUCCESS
+        )
 
 #Global instance
 auth_service = AuthenticationService()
