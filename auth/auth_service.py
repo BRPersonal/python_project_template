@@ -2,7 +2,7 @@ from typing import Optional, Dict, Any
 from fastapi import HTTPException, status
 from utils.logger import logger
 from .auth_models import (
-    SignInRequest, SignUpRequest, SignInResponse, AppUser,
+    SignInRequest, SignUpRequest, AuthenticatedUser, AppUser,
     AccessPermissions
 )
 from models.api_responses import SuccessResponse
@@ -52,7 +52,7 @@ class AuthenticationService:
             status_code=sc.ENTITY_CREATION_SUCCESSFUL
         )
 
-    async def sign_in(self, signin_request: SignInRequest) -> SuccessResponse[SignInResponse]:
+    async def sign_in(self, signin_request: SignInRequest) -> SuccessResponse[AuthenticatedUser]:
         """Authenticate user via PostgreSQL database"""
         # First, get user details from database
         app_user = await get_app_user(signin_request.email)
@@ -65,30 +65,23 @@ class AuthenticationService:
                 detail="Invalid credentials"
             )
 
-        # Split comma-separated roles and permissions into arrays
-        roles = app_user.roles.split(',') if app_user.roles else []
-        roles = [role.strip() for role in roles if role.strip()]
-
-        permissions = app_user.permissions.split(',') if app_user.permissions else []
-        permissions = [permission.strip() for permission in permissions if permission.strip()]
-
         # Generate JWT token
         token = self.jwt_util.generate_token(
             username=signin_request.email,
             first_name=app_user.firstName,
-            roles=roles,
-            permissions=permissions
+            roles=app_user.roles,
+            permissions=app_user.permissions
         )
 
-        logger.info(f"User authentication successful for email: {signin_request.email}")
         return SuccessResponse(
-            data=SignInResponse(
+            data=AuthenticatedUser(
                     firstName=app_user.firstName,
+                    email=signin_request.email,
                     token=token,
-                    message="Login successful",
-                    roles=roles,
-                    permissions=permissions
+                    roles=app_user.roles,
+                    permissions=app_user.permissions
                 ),
+            message="Login successful",
             status_code=sc.SUCCESS)
 
     async def sign_out(self, token: str) -> SuccessResponse[Dict[str, Any]]:

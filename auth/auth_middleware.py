@@ -31,7 +31,8 @@ class AuthenticationMiddleware:
         token = credentials.credentials
         
         try:
-            permissions = await auth_service.get_user_permissions(token)
+            result = await auth_service.get_user_permissions(token)
+            permissions = result.data
             
             authenticated_user = AuthenticatedUser(
                 email=permissions.email,

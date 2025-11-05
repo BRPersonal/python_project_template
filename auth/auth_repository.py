@@ -75,44 +75,37 @@ async def get_users_count() -> int:
 
 async def get_app_user(email: str) -> AppUser:
     """Get user by email address"""
-    try:
-        query = """
-            SELECT first_name, last_name, email_id, password, roles, permissions, social_login_ids
-            FROM app_user 
-            WHERE email_id = :email
-        """
-        params = {"email": email}
-        record = await postgre_manager.fetch_one(query=query, values=params)
+    query = """
+        SELECT first_name, last_name, email_id, password, roles, permissions, social_login_ids
+        FROM app_user 
+        WHERE email_id = :email
+    """
+    params = {"email": email}
+    record = await postgre_manager.fetch_one(query=query, values=params)
 
-        if not record:
-            raise BusinessException(
-                message=f"User with email '{email}' not found",
-                error_code=sc.ENTITY_NOT_FOUND
-            )
-        
-        # Convert comma-separated strings to lists
-        roles = record['roles'].split(',') if record['roles'] else []
-        roles = [role.strip() for role in roles if role.strip()]
-        
-        permissions = record['permissions'].split(',') if record['permissions'] else []
-        permissions = [permission.strip() for permission in permissions if permission.strip()]
-        
-        return AppUser(
-            firstName=record['first_name'],
-            lastName=record['last_name'],
-            email=record['email_id'],
-            password=record['password'],  # Return actual password hash
-            roles=roles,
-            permissions=permissions,
-            social_login_ids=record['social_login_ids'] if record['social_login_ids'] else None
-        )
-    except Exception as error:
+    if not record:
         raise BusinessException(
-            message=f"Failed to get user: {str(error)}",
-            error_code=sc.VALIDATION_ERROR,
-            original_exception=error,
-            details={"email": email}
+            message=f"User with email '{email}' not found",
+            error_code=sc.ENTITY_NOT_FOUND
         )
+
+    # Convert comma-separated strings to lists
+    roles = record['roles'].split(',') if record['roles'] else []
+    roles = [role.strip() for role in roles if role.strip()]
+
+    permissions = record['permissions'].split(',') if record['permissions'] else []
+    permissions = [permission.strip() for permission in permissions if permission.strip()]
+
+    return AppUser(
+        firstName=record['first_name'],
+        lastName=record['last_name'],
+        email=record['email_id'],
+        password=record['password'],  # Return actual password hash
+        roles=roles,
+        permissions=permissions,
+        social_login_ids=record['social_login_ids'] if record['social_login_ids'] else None
+    )
+
 
 async def assign_roles(email: str, roles: list[str],admin_user:str) -> None:
     """Assign roles to a user by email"""
@@ -187,39 +180,32 @@ def get_all_permissions() -> list[str]:
 
 async def update_password(email: str, new_password: str) -> None:
     """Update user password by email"""
-    try:
-        # Check if user exists
-        user_exists = await is_user_exists(email)
-        if not user_exists:
-            raise BusinessException(
-                message=f"User with email '{email}' not found",
-                error_code=sc.ENTITY_NOT_FOUND
-            )
-
-        # Hash the new password before storing
-        hashed_password = _hash_password(new_password)
-
-        # Update password
-        update_query = """
-            UPDATE app_user 
-            SET password = :password, last_updated_by = :updatedBy, last_updated_on = NOW()
-            WHERE email_id = :email
-        """
-
-        values = {
-            'password': hashed_password,
-            'updatedBy': 'system',
-            'email': email
-        }
-        await postgre_manager.execute(query=update_query, values=values)
-
-    except Exception as error:
+    # Check if user exists
+    user_exists = await is_user_exists(email)
+    if not user_exists:
         raise BusinessException(
-            message=f"Failed to update password : {str(error)}",
-            error_code=sc.VALIDATION_ERROR,
-            original_exception=error,
-            details={"email": email}
+            message=f"User with email '{email}' not found",
+            error_code=sc.ENTITY_NOT_FOUND
         )
+
+    # Hash the new password before storing
+    hashed_password = _hash_password(new_password)
+
+    # Update password
+    update_query = """
+        UPDATE app_user 
+        SET password = :password, last_updated_by = :updatedBy, last_updated_on = NOW()
+        WHERE email_id = :email
+    """
+
+    values = {
+        'password': hashed_password,
+        'updatedBy': 'system',
+        'email': email
+    }
+    await postgre_manager.execute(query=update_query, values=values)
+
+
 
 def verify_password(user_password: str, password_in_db: str) -> bool:
     """Verify a password against its hash"""

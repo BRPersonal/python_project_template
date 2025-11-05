@@ -14,16 +14,6 @@ class SignInRequest(BaseModel):
     email: EmailStr
     password: str
 
-class SignInResponse(BaseModel):
-    """Model for sign-in response"""
-    firstName: str
-    email: str
-    token: str
-    message: str
-    roles: Optional[List[str]] = []
-    permissions: Optional[List[str]] = []
-
-
 class AccessPermissions(BaseModel):
     """Model for user access permissions"""
     firstName: str
