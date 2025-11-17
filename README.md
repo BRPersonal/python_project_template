@@ -2,10 +2,10 @@
 Basic python project using FastAPI showing best practices
 
 $ uv sync
-$ source .venv/bin/activate
+$ source .venv/bin/activate  (activating virtual env is not required if you are using uv)
 $ docker-compose up -d
 
-$ python app.py
+$ uv run app.py
 Browse the url
 http://localhost:8002/health
 http://localhost:8002/health/database
