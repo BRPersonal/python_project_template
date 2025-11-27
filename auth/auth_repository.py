@@ -3,7 +3,6 @@ from business_exception import BusinessException
 from models.status_code import sc
 from utils.config import settings
 import bcrypt
-from utils.logger import logger
 from utils.postgre_db_manager import postgre_manager
 
 def _hash_password(password: str) -> str:
