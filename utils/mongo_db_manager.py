@@ -38,7 +38,7 @@ class MongoDBManager:
         """
         if self.client:
             self.client.close()
-            client = None
+            self.client = None
             logger.info("MongoDB connection closed")
 
 
