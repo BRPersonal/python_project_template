@@ -10,7 +10,9 @@ Browse the url
 http://localhost:8002/health
 http://localhost:8002/health/database
 
-Delete volumes also
+If you want to delete volumes also use -v flag. This will cleanup the databases
+so that next time you can start with blank databse. If you want
+to retain the database , then dont use -v flag
 $docker-compose down -v
 
 Securing the app with https

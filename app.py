@@ -122,7 +122,7 @@ async def database_health_check():
 
         health_status = await data_sources_manager.health_check()
         return {
-            "service": "ai-health-coach-be",
+            "service": "python-template-be",
             "version": "1.0.0",
             "database_status": health_status,
             "timestamp": datetime.now(timezone.utc).isoformat()
@@ -130,7 +130,7 @@ async def database_health_check():
     except Exception as e:
         logger.error(f"Database health check failed: {str(e)}")
         return {
-            "service": "ai-health-coach-be",
+            "service": "python-template-be",
             "version": "1.0.0",
             "database_status": {
                 "mongodb": {"status": "error", "connected": False},

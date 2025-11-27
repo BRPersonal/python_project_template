@@ -2,7 +2,7 @@ from typing import Optional, Dict, Any
 from business_exception import BusinessException
 from utils.logger import logger
 from .auth_models import (
-    SignInRequest, SignUpRequest, AuthenticatedUser, AppUser,
+    SignInRequest, SignUpRequest, AuthenticatedUser,
     AccessPermissions
 )
 from models.api_responses import SuccessResponse
