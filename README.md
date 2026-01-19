@@ -5,7 +5,11 @@ $ uv sync
 $ source .venv/bin/activate  (activating virtual env is not required if you are using uv)
 $ docker-compose up -d
 
-$ uv run app.py
+$ venv
+(python-template) $ uvicorn app:app (this defaults the host to localhost and port to 8000) 
+      or
+(python-template) $ uvicorn app:app --host 0.0.0.0 --port 8002
+
 Browse the url
 http://localhost:8002/health
 http://localhost:8002/health/database
