@@ -26,7 +26,8 @@ class PostgreDbManager:
     async def health_check(self) -> bool:
         try:
             if self.database:
-                await self.database.fetch_val("SELECT 1")
+                db_server_time = await self.fetch_value("SELECT NOW() as db_server_time;")
+                logger.info(f"✅ Connected. Time:{db_server_time}")
                 return True
             return False
         except Exception as e:
@@ -38,6 +39,9 @@ class PostgreDbManager:
 
     async def fetch_one(self,query:str, values: Optional[Dict[str,Any]] = None):
         return await self.database.fetch_one(query=query, values=values)
+
+    async def fetch_value(self,query:str, values: Optional[Dict[str,Any]] = None):
+        return await self.database.fetch_val(query=query, values=values)
 
     async def fetch_all(self,query:str,values: Optional[Dict[str,Any]] = None):
         return await self.database.fetch_all(query=query, values=values)
